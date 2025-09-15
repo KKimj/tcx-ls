@@ -60,3 +60,30 @@ jobs:
         with:
           name: tcx-ls-windows-x86_64.exe
           path: ./tcx-ls-windows-x86_64.exe
+
+  macos-universal-test:
+    name: Build macOS Universal
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Build macOS arm64 + x86_64
+        run: |
+          start=$(date +%s)
+          deno compile --target aarch64-apple-darwin --allow-read --allow-write --output tcx-ls-macos-arm64 main.ts
+          deno compile --target x86_64-apple-darwin --allow-read --allow-write --output tcx-ls-macos-x86_64 main.ts
+          lipo -create -output tcx-ls-macos-universal tcx-ls-macos-arm64 tcx-ls-macos-x86_64
+          end=$(date +%s)
+          echo "⏱ Total build + lipo time: $((end - start)) seconds"
+
+      - name: Upload Universal Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tcx-ls-macos-universal
+          path: ./tcx-ls-macos-universal
+          compression-level: 0
